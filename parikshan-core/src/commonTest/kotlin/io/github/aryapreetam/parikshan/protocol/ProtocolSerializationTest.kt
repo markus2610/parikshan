@@ -44,6 +44,21 @@ class ProtocolSerializationTest {
     }
 
     @Test
+    fun testFilePickerCommandsRoundTrip() {
+        val queued = Command.QueueFilePickerResult(id = "f1", mode = FilePickerMode.Files, paths = listOf("/tmp/a.png", "/tmp/b.png"))
+        val json = ProtocolJson.encodeCommand(queued)
+        assertTrue(json.contains("\"type\":\"queuefilepicker\""), json)
+        assertTrue(json.contains("\"mode\":\"files\""), json)
+        assertEquals(queued, ProtocolJson.decodeCommand(json))
+
+        val cancel = ProtocolJson.decodeCommand("""{"type": "queuefilepicker", "id": "f2", "mode": "cancel"}""")
+        assertEquals(Command.QueueFilePickerResult(id = "f2", mode = FilePickerMode.Cancel), cancel)
+
+        val verify = ProtocolJson.decodeCommand("""{"type": "verifyfilepicker", "id": "v1"}""")
+        assertEquals(Command.VerifyFilePickerQueue(id = "v1"), verify)
+    }
+
+    @Test
     fun testCommandTokenRoundTrip() {
         val command = Command.Ping(id = "p1", token = "token-123")
         val json = ProtocolJson.encodeCommand(command)

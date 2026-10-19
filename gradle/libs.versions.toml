@@ -10,6 +10,7 @@ coroutines = "1.10.2"
 serialization = "1.7.3"
 ktor = "3.3.0"
 jcodec = "0.2.5"
+byte-buddy = "1.17.5"
 playwright = "1.58.0"
 androidx-test-runner = "1.6.2"
 androidx-uiautomator = "2.3.0"
@@ -34,6 +35,8 @@ ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "kto
 ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-server-websockets = { module = "io.ktor:ktor-server-websockets-jvm", version.ref = "ktor" }
 jcodec-javase = { module = "org.jcodec:jcodec-javase", version.ref = "jcodec" }
+byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
+byte-buddy-agent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byte-buddy" }
 playwright-java = { module = "com.microsoft.playwright:playwright", version.ref = "playwright" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
 androidx-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "androidx-uiautomator" }

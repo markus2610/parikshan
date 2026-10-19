@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Added
+- **Desktop File Picker Control**: Added `selectFiles()`, `selectDirectory()`, and `cancelPicker()` to `E2ETestScope`. The app's `java.awt.FileDialog` returns the queued result without showing the native panel; a result left unconsumed at test end fails the test. Android, iOS, and Web fail fast with an explicit "not supported yet" error ([#26](https://github.com/aryapreetam/parikshan/issues/26)).
+
 ## [0.0.10] - 2026-09-24
 
 ### Added

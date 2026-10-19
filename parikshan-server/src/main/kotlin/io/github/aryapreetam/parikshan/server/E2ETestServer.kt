@@ -393,6 +393,7 @@ private class RunningE2ETestServer(
       is Command.Shutdown -> Response.Ok(command.id)
       is Command.Ping -> Response.Ok(command.id)
       is Command.Reset -> {
+        DesktopFileDialogInterceptor.reset()
         runCatching {
           withContext(Dispatchers.Main) {
             // Flush AWT / Compose Desktop event queue
@@ -401,8 +402,14 @@ private class RunningE2ETestServer(
         Response.Ok(command.id)
       }
       is Command.HideKeyboard -> Response.Ok(command.id)
+      is Command.QueueFilePickerResult ->
+        okOrError(command.id, DesktopFileDialogInterceptor.enqueue(command.mode, command.paths))
+      is Command.VerifyFilePickerQueue -> okOrError(command.id, DesktopFileDialogInterceptor.verify())
     }
   }
+
+  private fun okOrError(id: String, error: String?): Response =
+    if (error == null) Response.Ok(id) else Response.Error(id, error)
 
   private suspend fun waitForSelector(
     selector: io.github.aryapreetam.parikshan.protocol.Selector,

@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import sample.app.composeapp.generated.resources.Res
 import sample.app.composeapp.generated.resources.parikshan_logo
 import org.jetbrains.compose.resources.painterResource
+import sample.app.FilePickerDemo
 import sample.app.getPlatformName
 
 @Composable
@@ -76,6 +77,8 @@ fun HomeScreen() {
         modifier = Modifier.testTag("platform_badge").fillMaxWidth(),
         textAlign = TextAlign.Center
       )
+
+      FilePickerDemo()
     }
   }
 }

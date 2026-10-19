@@ -653,6 +653,9 @@ object AndroidServer {
         }
         Response.Ok(command.id)
       }
+      is Command.QueueFilePickerResult ->
+        Response.Error(command.id, "file picker control is not supported on android yet")
+      is Command.VerifyFilePickerQueue -> Response.Ok(command.id)
     }
   }
 

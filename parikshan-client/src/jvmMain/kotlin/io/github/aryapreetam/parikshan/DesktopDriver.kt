@@ -42,11 +42,19 @@ internal class DesktopDriver(
     io.github.aryapreetam.parikshan.client.ParikshanVideoSessionManager.updateVirtualCursor(x, y)
   }
 
+  /** Picker paths resolve against the test's working directory; the app process may run elsewhere. */
+  private fun withAbsolutePickerPaths(command: Command): Command =
+    if (command is Command.QueueFilePickerResult) {
+      command.copy(paths = command.paths.map { java.io.File(it).absolutePath })
+    } else {
+      command
+    }
+
   override suspend fun send(command: Command): Response {
     // SECURITY: Sign the command with the global session token
     command.token = sessionToken
-    
-    val json = ProtocolJson.encodeCommand(command)
+
+    val json = ProtocolJson.encodeCommand(withAbsolutePickerPaths(command))
     
     val maxAttempts = 30
     var lastError: Exception? = null
@@ -259,6 +267,8 @@ internal class DesktopDriver(
         add("-Dparikshan.desktop.focus=false")
         add("-Dparikshan.desktop.appMainClass=$appMainClass")
         add("-Dapple.awt.takeFocusOnShow=false")
+        // The FileDialog interceptor self-attaches a ByteBuddy agent on first selectFiles()/cancelPicker().
+        add("-Djdk.attach.allowAttachSelf=true")
         if (background == "true") {
             add("-Dparikshan.background=true")
         }

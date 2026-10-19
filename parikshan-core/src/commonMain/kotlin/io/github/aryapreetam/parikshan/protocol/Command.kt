@@ -202,6 +202,42 @@ sealed class Command {
     override var token: String = ""
   ) : Command()
 
+  /** Queues the result the next native file picker opened by the app returns instead of showing. */
+  @Serializable
+  @SerialName("queuefilepicker")
+  data class QueueFilePickerResult(
+    override val id: String,
+    val mode: FilePickerMode,
+    val paths: List<String> = emptyList(),
+    override var token: String = ""
+  ) : Command()
+
+  /** Fails when a queued picker result was never consumed or a picker opened with nothing queued. */
+  @Serializable
+  @SerialName("verifyfilepicker")
+  data class VerifyFilePickerQueue(
+    override val id: String,
+    override var token: String = ""
+  ) : Command()
+
+}
+
+/**
+ * What a queued file picker result returns to the app: selected files, a selected directory, or a cancel.
+ */
+@Serializable
+enum class FilePickerMode {
+  /** The picker returns one or more files. */
+  @SerialName("files")
+  Files,
+
+  /** The picker returns a single directory. */
+  @SerialName("directory")
+  Directory,
+
+  /** The picker is dismissed without a selection. */
+  @SerialName("cancel")
+  Cancel
 }
 
 /**

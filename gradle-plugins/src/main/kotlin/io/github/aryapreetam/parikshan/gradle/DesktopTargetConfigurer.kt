@@ -221,6 +221,8 @@ internal object DesktopProcess {
       add("-Dparikshan.token=$token")
       add("-Dparikshan.desktop.appMainClass=$mainClass")
       add("-Dapple.awt.takeFocusOnShow=false")
+      // The FileDialog interceptor self-attaches a ByteBuddy agent on first selectFiles()/cancelPicker().
+      add("-Djdk.attach.allowAttachSelf=true")
       if (background) {
         add("-Dparikshan.background=true")
       }

@@ -20,7 +20,16 @@ dependencies {
   implementation(libs.ktor.server.netty)
   implementation(libs.ktor.server.websockets)
   implementation(libs.jcodec.javase)
+  implementation(libs.byte.buddy)
+  implementation(libs.byte.buddy.agent)
   compileOnly(compose.desktop.currentOs)
+  testImplementation(libs.kotlin.test)
+  testImplementation(compose.desktop.currentOs)
+}
+
+// The FileDialog interceptor self-attaches a ByteBuddy agent; tests run it headless.
+tasks.withType<Test>().configureEach {
+  jvmArgs("-Djava.awt.headless=true", "-Djdk.attach.allowAttachSelf=true")
 }
 
 mavenPublishing {

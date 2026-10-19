@@ -1,6 +1,7 @@
 package io.github.aryapreetam.parikshan
 
 import io.github.aryapreetam.parikshan.protocol.Command
+import io.github.aryapreetam.parikshan.protocol.FilePickerMode
 import io.github.aryapreetam.parikshan.protocol.NodeSnapshot
 import io.github.aryapreetam.parikshan.protocol.Response
 import io.github.aryapreetam.parikshan.protocol.ScrollDirection
@@ -132,6 +133,13 @@ class E2ETestScope @InternalParikshanApi constructor(
   /** The configured delay in milliseconds applied after each UI command. */
   val stepDelayMs: Long get() = config.stepDelayMs
 
+  /** Shared with target-scoped child scopes so the end-of-test picker check sees every queued result. */
+  private class FilePickerUsage {
+    var queued = false
+  }
+
+  private var filePickerUsage = FilePickerUsage()
+
   /**
    * Executes the provided test [block] concurrently across each active target driver in parallel.
    *
@@ -171,6 +179,7 @@ class E2ETestScope @InternalParikshanApi constructor(
   suspend fun executeParallel(block: suspend E2ETestScope.() -> Unit) {
     driver.executeParallel { targetDriver ->
       val localScope = E2ETestScope(driver = targetDriver, config = config)
+      localScope.filePickerUsage = filePickerUsage
       localScope.block()
     }
   }
@@ -1198,6 +1207,72 @@ class E2ETestScope @InternalParikshanApi constructor(
     settleAfterCommand()
   }
 
+  /**
+   * Queues the files the next native file picker opened by the app returns, without showing it.
+   *
+   * Call it before the action that opens the picker. Relative paths resolve against the test's
+   * working directory. Each queued result is consumed by exactly one picker open, in order; a result
+   * still queued when the test ends fails the test. Desktop (JVM) only for now.
+   *
+   * ### Example Usage
+   * ```kotlin
+   * selectFiles("fixtures/a.png", "fixtures/b.png")
+   * click("pick_button")
+   * assertVisible("picked_count_2")
+   * ```
+   *
+   * @param paths One or more files the picker returns, in selection order.
+   * @see selectDirectory
+   * @see cancelPicker
+   */
+  suspend fun selectFiles(vararg paths: String) {
+    require(paths.isNotEmpty()) { "selectFiles() needs at least one path" }
+    queueFilePickerResult("selectFiles()", FilePickerMode.Files, paths.toList())
+  }
+
+  /**
+   * Queues the directory the next native directory picker opened by the app returns, without showing it.
+   *
+   * On macOS the app opens a directory picker by setting `apple.awt.fileDialogForDirectories=true`.
+   * Desktop (JVM) only for now.
+   *
+   * @param path The directory the picker returns.
+   * @see selectFiles
+   */
+  suspend fun selectDirectory(path: String) {
+    queueFilePickerResult("selectDirectory()", FilePickerMode.Directory, listOf(path))
+  }
+
+  /**
+   * Queues a cancel: the next native file picker opened by the app returns no selection, without showing it.
+   * Desktop (JVM) only for now.
+   *
+   * @see selectFiles
+   */
+  suspend fun cancelPicker() {
+    queueFilePickerResult("cancelPicker()", FilePickerMode.Cancel, emptyList())
+  }
+
+  private suspend fun queueFilePickerResult(action: String, mode: FilePickerMode, paths: List<String>) {
+    if (targetPlatform == "android" || targetPlatform == "ios" || targetPlatform == "wasm") {
+      throw AssertionError("$action failed: file picker control is not supported on $targetPlatform yet")
+    }
+    filePickerUsage.queued = true
+    expectOk(
+      action = action,
+      response = driver.send(Command.QueueFilePickerResult(id = nextId(), mode = mode, paths = paths))
+    )
+  }
+
+  /** Fails the test when a queued picker result was never consumed; a no-op when the test queued none. */
+  internal suspend fun verifyFilePickerQueue() {
+    if (!filePickerUsage.queued) return
+    expectOk(
+      action = "File picker check",
+      response = driver.send(Command.VerifyFilePickerQueue(id = nextId()))
+    )
+  }
+
   private suspend fun settleAfterCommand() {
     val delayMs = config.stepDelayMs
     if (delayMs > 0L) {
@@ -1361,6 +1436,7 @@ suspend fun e2eTest(
     }
     runCatching { driver.reset() }
     scope.block()
+    scope.verifyFilePickerQueue()
   } catch (throwable: Throwable) {
     if (config.captureScreenshotOnFailure) {
       runCatching {

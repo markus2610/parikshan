@@ -236,6 +236,9 @@ internal class WasmDriver private constructor(
       }
       is Command.Reset -> Response.Ok(command.id)
       is Command.HideKeyboard -> Response.Ok(command.id)
+      is Command.QueueFilePickerResult ->
+        Response.Error(command.id, "file picker control is not supported on wasm yet")
+      is Command.VerifyFilePickerQueue -> Response.Ok(command.id)
       is Command.StartRecording -> {
         lastRequestedVideoPath = command.path
         Response.Ok(command.id)

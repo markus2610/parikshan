@@ -72,6 +72,28 @@ All E2E actions, assertions, and waiting methods execute inside the `e2eTest` bl
 * **`relaunchApp()`**: Force-terminates and relaunches the application process.  
   * *Note: This is a fast browser refresh on WasmJs, but introduces a 1–2s boot latency on Desktop JVM targets. It is recommended to avoid using this method sequentially across many tests; use in-app UI navigation resets via `E2ETestLifecycle` instead.*
 
+### File Picker (Desktop)
+
+The app under test keeps calling `java.awt.FileDialog` as usual; the test queues the answer before the action that opens it. The native panel never appears.
+
+* **`selectFiles(vararg paths: String)`**: The next `FileDialog` returns these files (`getFiles()`, and `getFile()`/`getDirectory()` for the first). Relative paths resolve against the test's working directory; every file must exist.
+* **`selectDirectory(path: String)`**: The next `FileDialog` returns this directory as `getDirectory()` + `getFile()`, for apps that open it in directory mode (`apple.awt.fileDialogForDirectories`).
+* **`cancelPicker()`**: The next `FileDialog` is cancelled: `getFile()` is `null` and `getFiles()` is empty.
+
+```kotlin
+@Test
+fun picksTwoImages() = e2eTest {
+  selectFiles("fixtures/a.png", "fixtures/b.png")
+  click("pick_button")
+  assertVisible("picked_count_2")
+}
+```
+
+Results are consumed in order, one per dialog. A result still queued when the test ends fails the test and names it; a `FileDialog` opened with nothing queued is answered as cancelled and also fails the test. On Android, iOS, and Web these commands fail immediately with `file picker control is not supported on <platform> yet`.
+
+!!! note "How the dialog is intercepted"
+    On the first queued result, the Parikshan server inside the app attaches a Java agent to its own JVM and redirects `Dialog.show()` for `FileDialog` instances, so no native peer is created. The Gradle plugin launches the app with `-Djdk.attach.allowAttachSelf=true`; if you launch the app yourself, add that flag. Apps that never use these commands are not instrumented.
+
 ### Assertions
 
 * **`assertVisible(selector: Selector)`**: Asserts that the element matching the selector is visible in the current layout.
